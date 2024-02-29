@@ -14,17 +14,20 @@ class ECA:
 
     @staticmethod
     def bin_from_int(x):
+        """Helper function that converts integer to bit list"""
         wolfram_code = [int(bit) for bit in format(x, f'08b')]
         return wolfram_code
 
     @staticmethod
     def get_neighborhoods(lst):
+        """Helper function that return list of all neighbourhoods of element on list [elem[i-1], elem[i], elem[i+1]]"""
         n = len(lst)
         neighborhoods = [[lst[(i - 1) % n], lst[i], lst[(i + 1) % n]] for i in range(n)]
         return neighborhoods
 
     @staticmethod
     def eca_step(rule_number, configuration):
+        """Helper function that applies local rule to each cell and return next configuration"""
         rule = ECA.bin_from_int(rule_number)
         neighborhoods = ECA.get_neighborhoods(configuration)
         next_configuration = [rule[ECA.triple_bits.index(neighborhood)] for neighborhood in neighborhoods]
@@ -32,12 +35,14 @@ class ECA:
 
     @classmethod
     def init_random(cls, configuration_size):
+        """Method that inits ECA object with random configuration of given size"""
         if not isinstance(configuration_size, int) or configuration_size < 1:
             raise ValueError("Configuration_size must be a positive integer (1 or greater)")
         return cls([random.randint(0, 1) for _ in range(configuration_size)])
 
     @classmethod
     def init_config(cls, configuration):
+        """Method that inits ECA object with given configuration"""
         if not isinstance(configuration, list):
             raise TypeError("Configuration must be a list")
         if not all([bit == 0 or bit == 1 for bit in configuration]):
@@ -45,6 +50,7 @@ class ECA:
         return cls(configuration)
 
     def evolve(self, rule_number, steps):
+        """Method that simulates given steps number of ECA of given rule number"""
         if not 0 <= rule_number <= 255:
             raise ValueError("Rule_number must be a number between 0 and 255")
         self.rule = rule_number
@@ -55,6 +61,7 @@ class ECA:
         return self.history
 
     def visualize(self):
+        """Method that visualize simulation of ECA"""
         plt.imshow(self.history, cmap='binary')
         plt.xlabel('Cell Index')
         plt.ylabel('Time Step')
