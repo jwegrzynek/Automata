@@ -5,8 +5,6 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
 
-
-
 class ECA:
     triple_bits = [list(tup) for tup in list(product([1, 0], repeat=3))]
 
