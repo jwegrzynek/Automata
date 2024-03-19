@@ -51,8 +51,8 @@ class ECA:
     @classmethod
     def init_config(cls, configuration):
         """Method that inits ECA object with given configuration"""
-        if not isinstance(configuration, list):
-            raise TypeError("Configuration must be a list")
+        if not isinstance(configuration, (list, tuple)):
+            raise TypeError("Configuration must be a list or a tuple")
         if not all([bit == 0 or bit == 1 for bit in configuration]):
             raise ValueError("Configuration must be a list of 0 and 1")
         return cls(configuration)
