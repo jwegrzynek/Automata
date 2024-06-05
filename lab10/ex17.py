@@ -85,40 +85,40 @@ while running:
                 grid[row, col] = 1 - grid[row, col]
 
             # If the mouse is clicked on the "Quit" button, the game is terminated
-            elif 800 <= mouse[0] <= 940 and 50 <= mouse[1] <= 90:
+            elif 790 <= mouse[0] <= 960 and 50 <= mouse[1] <= 90:
                 pygame.quit()
                 running = False
 
             # If the mouse is clicked on the "Start" button, start the simulation
-            elif 800 <= mouse[0] <= 940 and 150 <= mouse[1] <= 190:
+            elif 790 <= mouse[0] <= 960 and 150 <= mouse[1] <= 190:
                 simulation_running = True
 
             # If the mouse is clicked on the "Stop" button, stop the simulation
-            elif 800 <= mouse[0] <= 940 and 250 <= mouse[1] <= 290:
+            elif 790 <= mouse[0] <= 960 and 250 <= mouse[1] <= 290:
                 simulation_running = False
 
             # If the mouse is clicked on the "Clear" button, clear the grid
-            elif 800 <= mouse[0] <= 940 and 350 <= mouse[1] <= 390:
+            elif 790 <= mouse[0] <= 960 and 350 <= mouse[1] <= 390:
                 grid = np.zeros((grid_size, grid_size), dtype=int)
                 previous_grid = np.zeros_like(grid)
 
             # If the mouse is clicked on the "New Config" button, generate a new random configuration
-            elif 800 <= mouse[0] <= 940 and 450 <= mouse[1] <= 490:
+            elif 790 <= mouse[0] <= 960 and 450 <= mouse[1] <= 490:
                 grid = generate_random_grid(grid_size)
                 previous_grid = np.zeros_like(grid)
 
             # If the mouse is clicked on the "History" button, history is switched on of off
-            elif 800 <= mouse[0] <= 940 and 550 <= mouse[1] <= 590:
+            elif 790 <= mouse[0] <= 960 and 550 <= mouse[1] <= 590:
                 if history is True:
                     previous_grid = np.zeros_like(grid)
                 history = not history
 
             # If the mouse is clicked on the "-" button, decrease the simulation speed
-            elif 800 <= mouse[0] <= 860 and 650 <= mouse[1] <= 690:
+            elif 790 <= mouse[0] <= 840 and 650 <= mouse[1] <= 690:
                 simulation_speed = max(0.25, simulation_speed - 0.25)
 
             # If the mouse is clicked on the "+" button, increase the simulation speed
-            elif 880 <= mouse[0] <= 940 and 650 <= mouse[1] <= 690:
+            elif 910 <= mouse[0] <= 960 and 650 <= mouse[1] <= 690:
                 simulation_speed = simulation_speed + 0.25
 
     screen.fill((60, 25, 60))
