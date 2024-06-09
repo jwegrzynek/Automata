@@ -9,60 +9,120 @@ def generate_random_grid(size, tree_prop):
         [[np.random.choice([0, 1], p=[1 - tree_prop, tree_prop]) for _ in range(size)] for _ in range(size)], dtype=int)
 
 
-def get_neighborhood(matrix, row, col):
+def detect_fire(matrix, row, col, wind_direction=None):
     rows, cols = matrix.shape
-    neighborhood = []
 
-    directions = [(-1, -1), (-1, 0), (-1, 1),
+    is_fire = False
+    is_fire_windside = False
+
+    directions = ((-1, -1), (-1, 0), (-1, 1),
                   (0, -1), (0, 1),
-                  (1, -1), (1, 0), (1, 1)]
+                  (1, -1), (1, 0), (1, 1))
+
+    wind_factor = {
+        'left': (0, -1),  # Increase probability for left neighbors
+        'right': (0, 1),  # Increase probability for right neighbors
+        'up': (-1, 0),  # Increase probability for upper neighbors
+        'down': (1, 0)  # Increase probability for lower neighbors
+    }
 
     for dr, dc in directions:
         r, c = row + dr, col + dc
         if 0 <= r < rows and 0 <= c < cols:
-            neighborhood.append(matrix[r, c])
+            if matrix[r, c] == 2:
+                is_fire = True
+                if wind_direction in ('left', 'right'):
+                    _, wind_dc = wind_factor[wind_direction]
+                    if dc == wind_dc:
+                        is_fire_windside = True
+                        break
+                elif wind_direction in ('up', 'down'):
+                    wind_dr, _ = wind_factor[wind_direction]
+                    if dr == wind_dr:
+                        is_fire_windside = True
+                        break
 
-    return neighborhood
+    return (is_fire, is_fire_windside)
 
 
-def update_grid(grid, f, p):
+def update_grid(grid, f, p, p_fire_wind_diff_side, wind_direction):
     new_grid = grid.copy()
     for i in range(grid.shape[0]):
         for j in range(grid.shape[1]):
+            if wind_direction is None:
+                if grid[i, j] == 1 and detect_fire(grid, i, j, wind_direction)[0]:
+                    new_grid[i, j] = 2
 
-            if grid[i, j] == 1 and 2 in get_neighborhood(grid, i, j):
-                new_grid[i, j] = 2
+                elif grid[i, j] == 1 and random.random() < f:
+                    new_grid[i, j] = 2
 
-            elif grid[i, j] == 1 and random.random() < f:
-                new_grid[i, j] = 2
+                elif grid[i, j] == 0 and random.random() < p:
+                    new_grid[i, j] = 1
 
-            elif grid[i, j] == 0 and random.random() < p:
-                new_grid[i, j] = 1
+                elif grid[i, j] == 2:
+                    new_grid[i, j] = 0
 
-            elif grid[i, j] == 2:
-                new_grid[i, j] = 0
+            else:
+                if grid[i, j] == 1:
+                    if detect_fire(grid, i, j, wind_direction) == (True, True):
+                        new_grid[i, j] = 2
+
+                    elif detect_fire(grid, i, j, wind_direction) == (True, False) and random.random() < p_fire_wind_diff_side:
+                        new_grid[i, j] = 2
+
+                    elif random.random() < f:
+                        new_grid[i, j] = 2
+
+                elif grid[i, j] == 0 and random.random() < p:
+                    new_grid[i, j] = 1
+
+                elif grid[i, j] == 2:
+                    new_grid[i, j] = 0
 
     return new_grid
 
 
+###########################################################
+
+pygame.init()
+pygame.font.init()
+
+wind_right = pygame.image.load('wind/wind_right.png')
+wind_left = pygame.image.load('wind/wind_left.png')
+wind_up = pygame.image.load('wind/wind_up.png')
+wind_down = pygame.image.load('wind/wind_down.png')
+wind_no = pygame.image.load('./wind/wind_no.png')
+current_image = wind_no
+
+font_big1 = pygame.font.SysFont('comicsansms', 55)
+font_big2 = pygame.font.SysFont('comicsansms', 55)
+pause_text_w = font_big1.render('Click SPACEBAR to START', True, (255, 255, 255))
+pause_text_b = font_big2.render('Click SPACEBAR to START', True, (0, 0, 0))
+restart_text_w = font_big1.render('Click ENTER to RESTART', True, (255, 255, 255))
+restart_text_b = font_big2.render('Click ENTER to RESTART', True, (0, 0, 0))
+
+running = True
+display_text = True
+simulation_running = False
+last_update_time = time.time()
+
+FPS = 24.00
+cell_size = 4
+res = (800, 800)
+
+screen = pygame.display.set_mode(res)
+pygame.display.set_caption('Forest Fire Model')
+
+# Probabilities
 TREE_PROPORTION = 0.5
 GROW_TREE_PROB = 0.1
 FIRE_PROB = 0.1
+FIRE_PROB_WIND_DIFF_SIDE = 0.2
+WIND_DIRECTION = None
 
-running = True
-simulation_running = False
-last_update_time = time.time()
-simulation_speed = 8.00
-res = (800, 800)
-cell_size = 4
-
-grid = generate_random_grid(int(res[0] / cell_size), 0.8)
-
-pygame.init()
-screen = pygame.display.set_mode(res)
+grid = generate_random_grid(int(res[0] / cell_size), TREE_PROPORTION)
 
 while running:
-
     # Event handler
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -72,14 +132,30 @@ while running:
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
                 simulation_running = not simulation_running
-            elif event.key == pygame.KEYUP:
-                simulation_speed += 1.00
-            elif event.key == pygame.KEYDOWN:
-                simulation_speed -= 1.00
+                display_text = not display_text
+            elif event.key == pygame.K_RETURN:
+                grid = generate_random_grid(int(res[0] / cell_size), TREE_PROPORTION)
+            elif event.key == pygame.K_RIGHT:
+                current_image = wind_right
+                WIND_DIRECTION = 'right'
+            elif event.key == pygame.K_LEFT:
+                current_image = wind_left
+                WIND_DIRECTION = 'left'
+            elif event.key == pygame.K_UP:
+                current_image = wind_up
+                WIND_DIRECTION = 'up'
+            elif event.key == pygame.K_DOWN:
+                current_image = wind_down
+                WIND_DIRECTION = 'down'
+            elif event.key == pygame.K_PERIOD:
+                current_image = wind_no
+
+    if not running:
+        break
 
     # Update grid
-    if simulation_running and (time.time() - last_update_time > 1 / simulation_speed):
-        grid = update_grid(grid, 0.1, 0.1)
+    if simulation_running and (time.time() - last_update_time > 1 / FPS):
+        grid = update_grid(grid, FIRE_PROB, GROW_TREE_PROB, FIRE_PROB_WIND_DIFF_SIDE, WIND_DIRECTION)
         last_update_time = time.time()
 
     # Draw grid
@@ -92,5 +168,16 @@ while running:
             elif grid[row, col] == 2:
                 color = (136, 8, 8)
             pygame.draw.rect(screen, color, pygame.Rect(col * cell_size, row * cell_size, cell_size, cell_size))
+
+    # Display text when paused
+    if display_text:
+        screen.blit(pause_text_b, (47, 340))
+        screen.blit(pause_text_w, (49, 342))
+        screen.blit(restart_text_b, (55, 400))
+        screen.blit(restart_text_w, (57, 402))
+
+    # Display wind images
+    if current_image:
+        screen.blit(current_image, (0, 0))
 
     pygame.display.update()
